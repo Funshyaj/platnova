@@ -23,10 +23,7 @@ export default function Home() {
     null,
   );
 
-  const wallets = useMemo(
-    () => (accounts ?? []).filter((a) => a.type !== "Vault"),
-    [accounts],
-  );
+  const wallets = accounts ?? [];
 
   const tabs = useMemo(() => {
     if (currencies && currencies.length > 0)

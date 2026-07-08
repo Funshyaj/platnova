@@ -125,10 +125,7 @@ export default function Transfer() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  const wallets = useMemo(
-    () => (accounts ?? []).filter((a) => a.type !== "Vault"),
-    [accounts],
-  );
+  const wallets = accounts ?? [];
   const rateMap = useMemo(() => (rates ? ratesToMap(rates) : {}), [rates]);
 
   const fromWallet = wallets.find((w) => w.id === fromWalletId);

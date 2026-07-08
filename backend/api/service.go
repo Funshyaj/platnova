@@ -35,8 +35,7 @@ var currencies = []Currency{
 	{Code: "GBP", FullName: "British Pound", Symbol: "£"},
 }
 
-// Account is a wallet: a balance held in one currency, owned by a User
-// (UserID empty for platform-owned accounts like the Vault).
+// Account is a wallet: a balance held in one currency, owned by a User.
 type Account struct {
 	ID        string    `json:"id"`
 	UserID    string    `json:"user_id,omitempty"`
@@ -85,9 +84,9 @@ var (
 	idempotencyStore = map[string]idempotentResult{}
 )
 
-// staticRates is the fixed FX rate table from the assessment brief, expressed
-// as USD_<CCY>: units of <CCY> per 1 USD. USD is treated as the base currency
-// for converting between any two supported currencies.
+// staticRates is the fixed FX rate table, expressed as USD_<CCY>: units of
+// <CCY> per 1 USD. USD is treated as the base currency for converting
+// between any two supported currencies.
 var staticRates = map[string]float64{
 	"USD_NGN": 1550,
 	"USD_EUR": 0.92,
@@ -138,8 +137,6 @@ func ConvertAmount(amount float64, from, to string) (float64, float64, error) {
 	rate := fromUSD / toUSD // amount of `to` per unit of `from`
 	return round2(converted), rate, nil
 }
-
-// ---- User operations ----
 
 func CreateUser(name, email string) (*User, error) {
 	if name == "" {
@@ -197,26 +194,6 @@ func CreateAccount(userID, name, currency string) (*Account, error) {
 		UserID:    userID,
 		Name:      name,
 		Type:      "Personal",
-		Currency:  currency,
-		Balance:   0,
-		CreatedAt: time.Now(),
-	}
-	accounts = append(accounts, acc)
-	return acc, nil
-}
-
-// CreateVaultAccount seeds the platform's own reserve wallet (unowned by any
-// User, Type "Vault"), used to back the dashboard's Vault Balance metric.
-func CreateVaultAccount(name, currency string) (*Account, error) {
-	if _, err := usdPerUnit(currency); err != nil {
-		return nil, err
-	}
-	mu.Lock()
-	defer mu.Unlock()
-	acc := &Account{
-		ID:        genID("acc"),
-		Name:      name,
-		Type:      "Vault",
 		Currency:  currency,
 		Balance:   0,
 		CreatedAt: time.Now(),
@@ -476,16 +453,18 @@ func GetRates() []Rate {
 }
 
 type Stats struct {
-	TotalAccounts     int     `json:"total_accounts"`
-	TotalTransfers    int     `json:"total_transfers"`
-	TotalBalanceUSD   float64 `json:"total_balance_usd"`
-	VaultBalanceUSD   float64 `json:"vault_balance_usd"`
+	TotalAccounts   int     `json:"total_accounts"`
+	TotalTransfers  int     `json:"total_transfers"`
+	TotalBalanceUSD float64 `json:"total_balance_usd"`
+	VaultBalanceUSD float64 `json:"vault_balance_usd"`
 }
 
 // GetStats aggregates dashboard metrics server-side so the frontend has a
 // single source of truth instead of re-deriving totals from paginated data.
-// "Platnova Vault" is a seeded account (see main.go) treated as the
-// platform's reserve balance for the Vault Balance card.
+// VaultBalanceUSD is the pooled total of every wallet's balance, in USD
+// terms: deposits grow the pool, and transfers only reassign ownership of
+// value already inside it, so this figure also serves as a reserve check —
+// it should always equal the sum of individual wallet balances.
 func GetStats() Stats {
 	mu.Lock()
 	defer mu.Unlock()
@@ -497,27 +476,23 @@ func GetStats() Stats {
 		}
 	}
 
-	var totalUSD, vaultUSD float64
+	var totalUSD float64
 	accountCount := 0
 	for _, a := range accounts {
 		usdPer, err := usdPerUnit(a.Currency)
 		if err != nil {
 			continue
 		}
-		usdValue := round2(a.Balance * usdPer)
-		if a.Type == "Vault" {
-			vaultUSD = usdValue
-			continue
-		}
 		accountCount++
-		totalUSD += usdValue
+		totalUSD += round2(a.Balance * usdPer)
 	}
+	totalUSD = round2(totalUSD)
 
 	return Stats{
 		TotalAccounts:   accountCount,
 		TotalTransfers:  len(transferIDs),
-		TotalBalanceUSD: round2(totalUSD),
-		VaultBalanceUSD: vaultUSD,
+		TotalBalanceUSD: totalUSD,
+		VaultBalanceUSD: totalUSD,
 	}
 }
 

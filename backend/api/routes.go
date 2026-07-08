@@ -7,9 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// RegisterRoutes wires every endpoint from the assessment brief (plus the
-// additions documented in the README: GET /accounts, GET /rates, GET /stats,
-// GET /users, GET /currencies) to the service.go business logic.
+// RegisterRoutes wires every endpoint
 func RegisterRoutes(r *gin.Engine) {
 	r.Use(corsMiddleware())
 
@@ -43,10 +41,8 @@ func listAccountsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, ListAccountViews())
 }
 
-// createAccountHandler keeps the brief's exact contract ({name, currency})
-// while adding an optional user_id to tie the new wallet to an existing
-// User. If user_id is omitted, the wallet is created unowned (like the
-// platform Vault).
+// createAccountHandler accepts an optional user_id to tie the new wallet to
+// an existing User. If user_id is omitted, the wallet is created unowned.
 func createAccountHandler(c *gin.Context) {
 	var body struct {
 		Name     string `json:"name"`

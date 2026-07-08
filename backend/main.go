@@ -20,19 +20,8 @@ func main() {
 	}
 }
 
-// seedDemoData gives the dashboard something to show on first load, since
-// the brief's endpoint table has no way to seed users/accounts other than
-// the API itself. "Platnova Vault" backs the dashboard's Vault Balance card
-// and is intentionally unowned (Type "Vault", no UserID).
+// seedDemoData gives the dashboard something to show on first load.
 func seedDemoData() {
-	vault, err := api.CreateVaultAccount("Platnova Vault", "USD")
-	if err != nil {
-		log.Fatalf("failed to seed vault: %v", err)
-	}
-	if _, _, err := api.Deposit(vault.ID, 250000); err != nil {
-		log.Fatalf("failed to seed vault deposit: %v", err)
-	}
-
 	type walletSeed struct {
 		currency string
 		name     string
