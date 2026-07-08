@@ -227,7 +227,11 @@ export default function Transfer() {
             toWallet &&
             fromWallet.currency !== toWallet.currency && (
               <p className="text-lg font-semibold text-blue-600">
-                ≈ {preview.toFixed(2)} {toWallet.currency}
+                You receive:{" "}
+                {Intl.NumberFormat("en-US", {
+                  style: "currency",
+                  currency: toWallet.currency,
+                }).format(preview)}
               </p>
             )}
           {formError && <p className="text-sm text-red-600">{formError}</p>}
